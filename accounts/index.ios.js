@@ -9,23 +9,77 @@ import {
   AppRegistry,
   StyleSheet,
   Text,
-  View
+  View,
+  AsyncStorage,
+  TextInput,
+  Dimensions,
+  TouchableHighlight
 } from 'react-native';
+import methods from './methods.js';
+
+let {height, width} = Dimensions.get('window');
+
+console.ignoredYellowBox = ['Setting a timer'];
 
 export default class accounts extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      username: '',
+      email: '',
+      password: '',
+    }
+    this.signup = this.signup.bind(this);
+  }
+
+  componentDidMount() {
+    methods.subscribe('signup', (res, err) => {
+      console.log(res);
+    });
+  }
+
+  signup() {
+    const {username, email, password} = this.state;
+    methods.accounts.signup({
+      username: username,
+      email: email,
+      password: password,
+    });
+  }
+
   render() {
+    const {username, email, password} = this.state;
     return (
       <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Welcome to React Native!
-        </Text>
-        <Text style={styles.instructions}>
-          To get started, edit index.ios.js
-        </Text>
-        <Text style={styles.instructions}>
-          Press Cmd+R to reload,{'\n'}
-          Cmd+D or shake for dev menu
-        </Text>
+        <View>
+          <TextInput
+            placeholder='Username'
+            keyboardType='default'
+            style={{width: width * .98, height: 50}}
+            defaultValue={username}
+            onChangeText={(username) => { this.setState({username}) }}
+          />
+          <TextInput
+            placeholder='Enter Email'
+            keyboardType='email-address'
+            style={{width: width * .98, height: 50}}
+            defaultValue={email}
+            onChangeText={(email) => { this.setState({email}) }}
+          />
+          <TextInput
+            placeholder='Password'
+            keyboardType='default'
+            secureTextEntry={true}
+            style={{width: width * .98, height: 50}}
+            defaultValue={password}
+            onChangeText={(password) => { this.setState({password}) }}
+          />
+          <TouchableHighlight style={{width: (width * 98)/100, height: (height * 8)/100, backgroundColor: '#00bfff'}} onPress={this.signup}>
+            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+              <Text>Signup</Text>
+            </View>
+          </TouchableHighlight>
+        </View>
       </View>
     );
   }
@@ -37,16 +91,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F5FCFF',
-  },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
   },
 });
 

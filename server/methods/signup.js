@@ -6,35 +6,65 @@ const base64 = require('base-64');
 const utf8 = require('utf8');
 const bcrypt = require('bcrypt');
 
+const UserSchema = require('../schema/user.json');
+const { SchemaValidation } = require('../schema/validator.js');
+
 module.exports = {
   signup: function(userInfo) {
-    return new Promise(function (resolve, reject){
+    return new Promise(function (resolve){
       try {
+
         let bytes = utf8.encode(userInfo.password);
         let encoded = base64.encode(bytes);
         let saltRounds = 10;
 
-        bcrypt.hash(encoded, saltRounds, function(err, hash) {
-          MongoClient.connect(mongoUrl).then(db => {
-
-            db.collection('users').insert({
-              username: userInfo.username,
-              email: userInfo.email,
-              password: hash,
-            }).then((result)=>{
-              resolve(result);
+        SchemaValidation(UserSchema, userInfo).then((res, err)=>{
+          if(err) {
+            resolve({
+              success: false,
+              reason: err
             });
+          } else {
+            if(res.success) {
+              bcrypt.hash(encoded, saltRounds, function(err, hash) {
+                MongoClient.connect(mongoUrl).then(db => {
 
-          });
+                  userInfo.password = hash;
+
+                  db.collection('users').insert(userInfo).then((result)=>{
+                    resolve({
+                      success: true,
+                      data: result
+                    });
+                  });
+
+                }).catch((connErr)=>{
+                  resolve({
+                    success: false,
+                    reason: connErr.message
+                  });
+                });
+              });
+            } else {
+              resolve({
+                success: false,
+                reason: res.reasons
+              });
+            }
+          }
         });
+
       } catch(e) {
-        reject(e)
+        resolve({
+          success: false,
+          reason: e
+        });
       }
     });
   },
 
   login: function(userInfo) {
-    return new Promise(function (resolve, reject){
+    return new Promise(function (resolve){
       let bytes = utf8.encode(userInfo.password);
       let encoded = base64.encode(bytes);
       let saltRounds = 10;
